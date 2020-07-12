@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 # 配置参数
 epoches = 100
-alpha = 0.01
+alpha = 0.001    #loss一直是nan,是因为学习率设置的太大了
 K = 10
 
 
@@ -51,16 +51,21 @@ def h_func(X, theta):
 # 逻辑回归向量化
 def cost_func(theta, X, y):
     m = len(X)
-    h = h_func(X, theta).reshape(-1, 1)
-    loss = np.dot((-y).T, np.log(h)) - np.dot((1 - y).T, np.log(1 - h))
-    loss = np.sum(loss) / m
+    losses=0
+    for i in range(m):
+        cur_x,cur_y=X[i].reshape(1,-1),y[i].reshape(1,-1)
+        pred_y = h_func(cur_x, theta)
+        #loss = np.dot((-y).T, np.log(h)) - np.dot((1 - y).T, np.log(1 - h)) 错误，意义是y和log(h)按位相乘
+        loss=np.sum((-cur_y)*np.log(pred_y))-np.sum((1-cur_y)*np.log(1-pred_y))
+        losses+=loss
+    loss = losses/ m
     return loss
 
 
 def cost_func_reg(theta, X, y, lamda):
     m = len(X)
     loss = cost_func(theta, X, y)
-    reg = lamda / (2 * m) * np.dot(theta.T, theta)
+    reg = np.sum(lamda / (2 * m) * np.dot(theta.T, theta))
     return loss + reg
 
 
@@ -90,7 +95,7 @@ def data_preprocessing(y):
 
 
 def train(theta, X, y_all, lamda, reg=False):
-    losses = []
+    losses = np.zeros((epoches,1))
     thetas = np.zeros([len(X[0]), K])
     for i in range(K):
         y_t = y_all[:, i].reshape(-1, 1)
@@ -98,12 +103,12 @@ def train(theta, X, y_all, lamda, reg=False):
             # print(i)
             if reg == False:
                 loss = cost_func(theta, X, y_t)
-                losses.append(loss)
+                losses[epo,0]+=loss
                 grad = gradient(theta, X, y_t)
                 theta = theta - alpha * grad
             else:
                 loss = cost_func_reg(theta, X, y_t, lamda)
-                losses.append(loss)
+                losses[epo,0]+=loss
                 grad_reg = gradint_reg(theta, X, y_t, lamda)
                 theta = theta - alpha * grad_reg
             thetas[:, i] = theta[:, 0]
@@ -111,7 +116,7 @@ def train(theta, X, y_all, lamda, reg=False):
 
 
 def plot_loss(loss):  # loss总是为nan
-    x = np.linspace(0, epoches, epoches)
+    x = np.linspace(0, len(loss), len(loss))
     plt.figure()
     plt.plot(x, loss, color='red', linewidth=2)
     plt.xlabel('epoches')
@@ -150,10 +155,11 @@ if __name__ == '__main__':
     # rand_X=X[rand_index]
     # rand_y=y[rand_index]
     # display_data(rand_X,rand_y)
-    theta = np.ones((401, 1))
+    theta = np.zeros((401, 1))
     y_all = data_preprocessing(y)
     #            训练模型
-    # x = normal_data(X)
+    x = normal_data(X)
     x = np.append(np.ones((m, 1)), X, axis=1)
-    _, thetas = train(theta, x, y_all, 0.001, True)
-    test(thetas, x, y_all)
+    losses, thetas = train(theta, x, y_all, 0.001, True)
+    plot_loss(losses)
+    #test(thetas, x, y_all)

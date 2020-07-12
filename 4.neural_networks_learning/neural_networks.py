@@ -7,8 +7,9 @@ import cv2
 import matplotlib.pyplot as plt
 
 K = 10
-epoches=50
-lr_rate=0.005
+epoches = 50
+lr_rate = 0.005
+
 
 def load_data():
     datas = loadmat('ex4data1.mat')
@@ -29,7 +30,7 @@ class MoudeNN():
         self.theta1 = theta1
         self.theta2 = theta2
         self.lamda = lamda
-        self.check=check
+        self.check = check
         if check == True:
             self.theta1_check = theta1.copy()
             self.theta2_check = theta2.copy()
@@ -95,10 +96,10 @@ class MoudeNN():
 
     def sigmoid_gradient(self, z):
         # 对sigmoid函数求导
-        gz=1/(1+np.exp(-z))
-        return gz*(1-gz)
+        gz = 1 / (1 + np.exp(-z))
+        return gz * (1 - gz)
 
-    def back_propagation(self, X, y,reg=False):
+    def back_propagation(self, X, y, reg=False):
         '''按照行实现反向传播
         链式法则：J(Θ)对Θ求导=J(Θ)对z求导*z对Θ求导=Delta*x
         '''
@@ -119,56 +120,60 @@ class MoudeNN():
             delta2 = np.dot(delta3, self.theta2)[:, 1:] * self.sigmoid_gradient(z2)  # 1*25
             Delta2 = Delta2 + np.dot(delta3.T, a2)  # 10*25
             Delta1 = Delta1 + np.dot(delta2.T, a1)  # 25*401
-        if reg==True:
-            Delta2_reg=self.theta2
-            Delta1_reg=self.theta1
-            #Delta2 = np.append(np.zeros((K, 1)), Delta2, axis=1)
-            Delta1, Delta2 = Delta1 / m+self.lamda/m*Delta1_reg, Delta2 / m+self.lamda/m*Delta2_reg
+        if reg == True:
+            Delta2_reg = self.theta2
+            Delta1_reg = self.theta1
+            # Delta2 = np.append(np.zeros((K, 1)), Delta2, axis=1)
+            Delta1, Delta2 = Delta1 / m + self.lamda / m * Delta1_reg, Delta2 / m + self.lamda / m * Delta2_reg
         else:
-            #Delta2 = np.append(np.zeros((K, 1)), Delta2, axis=1)
-            Delta1, Delta2 = Delta1 / m , Delta2 / m
+            # Delta2 = np.append(np.zeros((K, 1)), Delta2, axis=1)
+            Delta1, Delta2 = Delta1 / m, Delta2 / m
         return Delta1, Delta2
 
     def compute_numerical_gradient(self, X, y):
         e = 1e-4
-        #order='F',不能改变原来的值
-        #prams = np.append(np.ravel(self.theta1_check, order='F'), np.ravel(self.theta2_check, order='F'))
-        num_gards=None
+        # order='F',不能改变原来的值
+        # prams = np.append(np.ravel(self.theta1_check, order='F'), np.ravel(self.theta2_check, order='F'))
+        num_gards = None
         for index in range(2):
-            if index==0:
+            if index == 0:
                 prams = np.ravel(self.theta1_check)
             else:
                 prams = np.ravel(self.theta2_check)
             num_grad = np.zeros(prams.shape)
             # 对于多个theta的每一个位置都要计算loss
             for i in range(prams.size):
-                prams[i] = prams[i]+e
+                prams[i] = prams[i] + e
                 loss_plus = self.cost_func(X, y)
-                prams[i] = prams[i]-2 * e
+                prams[i] = prams[i] - 2 * e
                 loss_sub = self.cost_func(X, y)
                 num_grad[i] = (loss_plus - loss_sub) / (2 * e)
                 prams[i] = prams[i] + e
-                if i>10:
+                if i > 10:
                     break
-            if index==0:
-                num_gards=num_grad
+            if index == 0:
+                num_gards = num_grad
             else:
-                num_gards=np.append(num_gards,num_grad)
+                num_gards = np.append(num_gards, num_grad)
         return num_gards
-    def train(self,X,y):
-        losses=[]
+
+    def train(self, X, y):
+        losses = []
         for i in range(epoches):
-            loss=self.cost_func(X,y)
+            loss = self.cost_func(X, y)
             losses.append(loss)
-            Delta1,Delta2=self.back_propagation(X,y)
-            self.theta1=self.theta1-lr_rate*Delta1
-            self.theta2=self.theta2-lr_rate*Delta2      #最好是能展开，一起更新
-        return losses,self.theta1,self.theta2
-    def my_fmin_cg(self,X,y):
+            Delta1, Delta2 = self.back_propagation(X, y)
+            self.theta1 = self.theta1 - lr_rate * Delta1
+            self.theta2 = self.theta2 - lr_rate * Delta2  # 最好是能展开，一起更新
+        return losses, self.theta1, self.theta2
+
+    def my_fmin_cg(self, X, y):
         # params = fmin_cg(self.cost_func, fprime=self.back_propagation, \
         #                           args=(X,y))
         # return params
         pass
+
+
 def plot_data(X):
     img = np.zeros((10 * 20, 10 * 20))
     for line in range(10):
@@ -185,13 +190,16 @@ def one_to_all_y(y):
         y_t[np.where(y[:, 0] == i), 0] = 1
         y_all[:, i - 1] = y_t[:, 0]
     return y_all
+
+
 def plot_loss(losses):
-    x=np.linspace(0,len(losses),num=len(losses))
+    x = np.linspace(0, len(losses), num=len(losses))
     plt.figure()
-    plt.plot(x,losses,color='red',linewidth=2)
+    plt.plot(x, losses, color='red', linewidth=2)
     plt.xlabel('epoch')
     plt.ylabel('losses')
     plt.show()
+
 
 if __name__ == '__main__':
     X, y = load_data()
@@ -206,7 +214,7 @@ if __name__ == '__main__':
     nn.randInitializeWeights()
     out = nn.forward(X)
     y_all = one_to_all_y(y)
-    #loss = nn.cost_func_reg(X, y_all)
+    # loss = nn.cost_func_reg(X, y_all)
 
     # 反向传播
     # theta=np.zeros((25,10))
@@ -217,16 +225,16 @@ if __name__ == '__main__':
     # Delta1, Delta2 = nn.back_propagation(X, y_all)
     # gard = np.append(np.ravel(Delta1), np.ravel(Delta2))
 
-    #check_grad
-    #num_grad = nn.compute_numerical_gradient(X, y_all)
-    #num_grad=num_grad[:10]
-    #gard=gard[:10]
-    #you should see a relative difference that is less than 1e-9
-    #diff = np.linalg.norm(num_grad - gard) / np.linalg.norm(num_grad + gard)
-    #print(diff)
+    # check_grad
+    # num_grad = nn.compute_numerical_gradient(X, y_all)
+    # num_grad=num_grad[:10]
+    # gard=gard[:10]
+    # you should see a relative difference that is less than 1e-9
+    # diff = np.linalg.norm(num_grad - gard) / np.linalg.norm(num_grad + gard)
+    # print(diff)
 
-    #训练模型及验证模型
-    losses,theta1_pred,theta2_pred=nn.train(X, y_all)
+    # 训练模型及验证模型
+    losses, theta1_pred, theta2_pred = nn.train(X, y_all)
     print(losses)
 
-    #Visualizing the hidden layer
+    # Visualizing the hidden layer

@@ -1,12 +1,13 @@
-#coding=utf-8
+# coding=utf-8
 
 import numpy as np
 import scipy.optimize as optimize
 from scipy.io import loadmat
 import cv2
 
-static_grad=np.arange(0)
-K=10
+static_grad = np.arange(0)
+K = 10
+
 
 def randInitializeWeights():
     '''
@@ -18,26 +19,30 @@ def randInitializeWeights():
     epsilon_init_2 = np.sqrt(6) / np.sqrt(10 + 26)
     print(epsilon_init_2)
     theta2 = np.random.rand(10, 25 + 1) * 2 * epsilon_init_2 - epsilon_init_2
-    nn_prams=np.append(np.ravel(theta1),np.ravel(theta2))
+    nn_prams = np.append(np.ravel(theta1), np.ravel(theta2))
     return nn_prams
 
+
 def sigmoid(z):
-    return 1/(1+np.exp(-z))
+    return 1 / (1 + np.exp(-z))
+
 
 def sigmoid_gradient(z):
     # 对sigmoid函数求导:g(z)(1-g(z))
     return sigmoid(z) * (1 - sigmoid(z))
 
+
 def h_func(theta, X):
     return np.dot(X, theta.T)
 
-def cost_func(nnprams,X, y):
+
+def cost_func(nnprams, X, y):
     m = len(X)
     losses = 0
-    theta1=np.reshape(nnprams[:25*401],(25,401))
-    theta2=np.reshape(nnprams[25*401:],(10,26))
-    Delta1=np.zeros((25,401))
-    Delta2=np.zeros((10,26))
+    theta1 = np.reshape(nnprams[:25 * 401], (25, 401))
+    theta2 = np.reshape(nnprams[25 * 401:], (10, 26))
+    Delta1 = np.zeros((25, 401))
+    Delta2 = np.zeros((10, 26))
     for i in range(m):
         cur_x = X[i].reshape(1, -1)
         cur_y = y[i].reshape(1, -1)  # 1*10,theta1=25*401,theta2=10*26
@@ -48,7 +53,7 @@ def cost_func(nnprams,X, y):
         z3 = h_func(theta2, a2)  # 1*10
         a3 = 1 / (1 + np.exp(-z3))  # 1*10
 
-        delta3 = a3-cur_y  # 1*10,求导后是a2-cur_y
+        delta3 = a3 - cur_y  # 1*10,求导后是a2-cur_y
         delta2 = np.dot(delta3, theta2)[:, 1:] * sigmoid_gradient(z2)  # 1*25
         Delta2 = Delta2 + np.dot(delta3.T, a2)  # 10*25
         Delta1 = Delta1 + np.dot(delta2.T, a1)  # 25*401
@@ -59,10 +64,11 @@ def cost_func(nnprams,X, y):
 
     Delta1, Delta2 = Delta1 / m, Delta2 / m
     global static_grad
-    static_grad=np.append(np.ravel(Delta1),np.ravel(Delta2))
+    static_grad = np.append(np.ravel(Delta1), np.ravel(Delta2))
     losses = losses / m
-    print('losses:',losses)
+    print('losses:', losses)
     return losses
+
 
 def gradient(*args):
     '''按照行实现反向传播
@@ -70,27 +76,29 @@ def gradient(*args):
     '''
     return static_grad
 
-def cost_func_reg(nnprams,X, y,lamda):
-    m=len(X)
-    theta1=np.reshape(nnprams[:25*401],(25,401))
-    theta2=np.reshape(nnprams[25*401:],(10,26))
-    losses = cost_func(nnprams,X, y)
+
+def cost_func_reg(nnprams, X, y, lamda):
+    m = len(X)
+    theta1 = np.reshape(nnprams[:25 * 401], (25, 401))
+    theta2 = np.reshape(nnprams[25 * 401:], (10, 26))
+    losses = cost_func(nnprams, X, y)
     reg_losses = lamda / (2 * m)
-    reg_losses = reg_losses * (np.sum(theta1 *theta1) + np.sum(theta2 * theta2))
+    reg_losses = reg_losses * (np.sum(theta1 * theta1) + np.sum(theta2 * theta2))
     return losses + reg_losses
-def gradient_reg(nnprams,X, y,lamda):
-    m=len(X)
-    theta1=np.reshape(nnprams[:25*401],(25,401))
-    theta2=np.reshape(nnprams[25*401:],(10,26))
+
+
+def gradient_reg(nnprams, X, y, lamda):
+    m = len(X)
+    theta1 = np.reshape(nnprams[:25 * 401], (25, 401))
+    theta2 = np.reshape(nnprams[25 * 401:], (10, 26))
     Delta2_reg = theta2
     Delta1_reg = theta1
-    global  Delta1, Delta2
-    Delta1=Delta1+lamda/m*Delta1_reg
+    global Delta1, Delta2
+    Delta1 = Delta1 + lamda / m * Delta1_reg
     Delta2 = Delta2 + lamda / m * Delta2_reg
     global static_grad
     static_grad = np.append(np.ravel(Delta1), np.ravel(Delta2))
     return static_grad
-
 
 
 def load_data():
@@ -98,6 +106,7 @@ def load_data():
     X = datas['X']  # 5000*20*20
     y = datas['y']
     return X, y
+
 
 def one_to_all_y(y):
     m = len(y)
@@ -107,26 +116,30 @@ def one_to_all_y(y):
         y_t[np.where(y[:, 0] == i), 0] = 1
         y_all[:, i - 1] = y_t[:, 0]
     return y_all
+
+
 def display_data(x):
-    m, n = x.shape         #25*400
-    lines=rows=int(np.sqrt(m))
-    img=np.zeros((5*20,5*20))
+    m, n = x.shape  # 25*400
+    lines = rows = int(np.sqrt(m))
+    img = np.zeros((5 * 20, 5 * 20))
     for line in range(lines):
         for row in range(rows):
-            img[line*20:(line+1)*20,row*20:(row+1)*20]=np.reshape(x[5*line+row]*255,(20,20))
-    cv2.imwrite('a.png',img)
+            img[line * 20:(line + 1) * 20, row * 20:(row + 1) * 20] = np.reshape(x[5 * line + row] * 255, (20, 20))
+    cv2.imwrite('a.png', img)
+
 
 if __name__ == '__main__':
-    nn_prams=randInitializeWeights()
-    X,y=load_data()
-    y_all=one_to_all_y(y)
-    static_grad=nn_prams       #必须先初始化
-    #自己训练速度慢。最好是使用optimize.minimize方法，快速收敛
-    ret=optimize.minimize(fun=cost_func,x0=nn_prams,method="CG", jac=gradient,args=(X,y_all),options={"maxiter": 50})
+    nn_prams = randInitializeWeights()
+    X, y = load_data()
+    y_all = one_to_all_y(y)
+    static_grad = nn_prams  # 必须先初始化
+    # 自己训练速度慢。最好是使用optimize.minimize方法，快速收敛
+    ret = optimize.minimize(fun=cost_func, x0=nn_prams, method="CG", jac=gradient, args=(X, y_all),
+                            options={"maxiter": 50})
     print(ret)
 
-    #显示隐藏层
-    prams=ret['x']
-    theta1=np.reshape(prams[:25*401],(25,401))
-    theta2=np.reshape(prams[25*401:],(10,26))
-    display_data(theta1[:,1:])    #1*400
+    # 显示隐藏层
+    prams = ret['x']
+    theta1 = np.reshape(prams[:25 * 401], (25, 401))
+    theta2 = np.reshape(prams[25 * 401:], (10, 26))
+    display_data(theta1[:, 1:])  # 1*400

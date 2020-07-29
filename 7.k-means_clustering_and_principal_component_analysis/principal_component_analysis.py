@@ -1,5 +1,16 @@
 # coding=utf-8
 
+'''
+    主成分分析2步走：
+    （1）数据归一化
+    （2）计算SIMGA=1/m*np.dot(X.T,X)
+    （3）U,S,V=np.linalg.svd(SIMGA)
+
+    常用：
+    数据降维：np.dot(X,U[:,0:k])
+    恢复原来维度：U_reduce=np.dot(X,U[:,0:k]);np.dot(U_reduce,U[:,0:k].T)
+
+'''
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D

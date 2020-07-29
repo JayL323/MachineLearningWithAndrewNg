@@ -1,5 +1,11 @@
 # coding=utf-8
 
+'''
+    k-means 3步：
+    （1）初始化中心点
+    （2）对于每个训练数据，找到距离最近的点，返回对应的类别
+    （3）对于每个类别，计算新的中心点
+'''
 import numpy as np
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
